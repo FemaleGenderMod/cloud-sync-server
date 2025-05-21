@@ -12,7 +12,7 @@ This requires the following to run:
 - [Poetry](https://python-poetry.org/)
 
 ```sh
-git clone https://github.com/celestialfault/wfgm-sync-server.git
+git clone https://codeberg.org/celestialfault/wfgm-sync-server.git
 cd wfgm-sync-server
 poetry install --only main
 poetry run fastapi run
