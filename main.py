@@ -270,8 +270,8 @@ async def update_data(uuid: UUID4, auth_token: Annotated[str, Header()], body: U
     return {"success": True}
 
 
-@app.get("/{uuid}", response_model=UserConfig, responses={404: {}}, summary="Get player data")
+@app.get("/{uuid}", response_model=UserConfig, responses={204: {}}, summary="Get player data")
 async def get_player(uuid: UUID4, response: Response):
     response.headers["Cache-Control"] = "public,max-age=600"
     user = await User.find_one(User.uuid == uuid)
-    return user and user.data or PlainTextResponse(status_code=404)
+    return user and user.data or PlainTextResponse(status_code=204)
