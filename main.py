@@ -74,7 +74,7 @@ async def validate_session_server(server_id: str, username: str) -> UUID4:
 
 
 @app.get("/", include_in_schema=False)
-def home():
+def redirect_root():
     return RedirectResponse("https://modrinth.com/mod/female-gender")
 
 
@@ -85,12 +85,14 @@ def home():
     responses={400: {"model": ErrorResponse}},
     summary="Get data for multiple players",
 )
-async def get_multiple_players(body: set[UUID4]):
+async def get_multiple_players(body: set[UUID4], response: Response):
     """Get player data for up to 20 unique UUIDs at once
 
     Any provided UUIDs that the server doesn't have any sync data for will simply be omitted from
     the returned users object.
     """
+    # this technically doesn't do anything because POST, but... it's the thought that counts, I guess.
+    response.headers["Cache-Control"] = "public, max-age=600"
     if len(body) < 2:
         return JSONResponse(
             status_code=400,
@@ -110,7 +112,7 @@ async def get_multiple_players(body: set[UUID4]):
 
     return {
         "success": True,
-        "users": {x.uuid: x.data async for x in User.find_many(In(User.uuid, body))},
+        "users": {x.uuid: x.data async for x in User.find_many(In(User.uuid, body)) if x.data},
     }
 
 
@@ -120,7 +122,7 @@ async def get_multiple_players(body: set[UUID4]):
     summary="Get contributor nametags",
 )
 async def contributors(response: Response):
-    response.headers["Cache-Control"] = "public,max-age=3600"
+    response.headers["Cache-Control"] = "public, max-age=3600"
     # noinspection PyComparisonWithNone
     return {x.uuid: x.nametag async for x in User.find(User.nametag != None)}
 
@@ -132,9 +134,10 @@ async def contributors(response: Response):
     summary="Update contributor nametag",
 )
 async def update_contributor(
-    uuid: UUID4, auth_token: Annotated[str, Header()], body: ContributorNametag
+    uuid: UUID4, auth_token: Annotated[str, Header()], body: ContributorNametag, response: Response
 ):
     """Internal endpoint, updates the nametag stored for a contributor"""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     if auth_token != os.environ["ADMIN_TOKEN"]:
         return PlainTextResponse(status_code=401)
 
@@ -154,8 +157,9 @@ async def update_contributor(
     responses={401: {}, 404: {"model": ErrorResponse}},
     summary="Delete contributor nametag",
 )
-async def delete_contributor(uuid: UUID4, auth_token: Annotated[str, Header()]):
+async def delete_contributor(uuid: UUID4, auth_token: Annotated[str, Header()], response: Response):
     """Internal endpoint, deletes any nametag stored for a contributor"""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     if auth_token != os.environ["ADMIN_TOKEN"]:
         return PlainTextResponse(status_code=401)
 
@@ -171,13 +175,13 @@ async def delete_contributor(uuid: UUID4, auth_token: Annotated[str, Header()]):
 
 @app.get("/stats", response_model=StatsResponse, summary="Get sync server statistics")
 async def stats(response: Response):
-    response.headers["Cache-Control"] = "public,max-age=300"
+    response.headers["Cache-Control"] = "public, max-age=1800"
     return {"synced_users": await User.count(), "timestamp": datetime.now(timezone.utc)}
 
 
 @app.get("/health-check", include_in_schema=False)
 async def healthcheck(response: Response):
-    response.headers["Cache-Control"] = "no-store"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return PlainTextResponse(status_code=204)
 
 
@@ -201,7 +205,7 @@ async def get_auth(
 
     Any authentication tokens that haven't yet expired will be invalidated after obtaining a new token.
     """
-    response.headers["Cache-Control"] = "no-store"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
 
     try:
         uuid = await validate_session_server(server_id, username)
@@ -230,6 +234,10 @@ async def get_auth(
     }
 
 
+# NOTE: the following routes MUST be the last routes; any additional top-level routes added
+# after this will be shadowed by the player endpoint routes, and will not be resolved correctly.
+
+
 @app.put(
     "/{uuid}",
     response_model=SuccessResponse,
@@ -240,12 +248,14 @@ async def get_auth(
     },
     summary="Update player data",
 )
-async def update_data(uuid: UUID4, auth_token: Annotated[str, Header()], body: UserConfig, response: Response):
+async def update_data(
+    uuid: UUID4, auth_token: Annotated[str, Header()], body: UserConfig, response: Response
+):
     """Stores the provided player data for the given authenticated user
 
     This requires an `Auth-Token` header provided from the `/auth` route.
     """
-    response.headers["Cache-Control"] = "no-store"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
 
     auth = await UserAuth.find_one(UserAuth.token == auth_token)
     if not auth:
@@ -268,6 +278,57 @@ async def update_data(uuid: UUID4, auth_token: Annotated[str, Header()], body: U
     # noinspection PyArgumentList
     await user.save()
     return {"success": True}
+
+
+@app.delete(
+    "/{uuid}",
+    responses={
+        204: {},
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+    summary="Delete player data",
+)
+async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()], response: Response):
+    """Deletes the stored player data for the given authenticated user
+
+    This requires an `Auth-Token` header provided from the `/auth` route.
+
+    Note that the provided authentication token remains valid for its normal lifecycle after
+    sending a request to this route.
+    """
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+
+    auth = await UserAuth.find_one(UserAuth.token == auth_token)
+    if not auth:
+        return JSONResponse(
+            status_code=401,
+            content={"success": False, "error": "Authentication is invalid or has expired"},
+        )
+    if auth.uuid != uuid:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "success": False,
+                "error": "The given authentication is not valid for the current user",
+            },
+        )
+
+    user = await User.find_one({User.uuid: uuid})
+    if not user or not user.data:
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "error": "No data is stored for the given player"},
+        )
+
+    if user.nametag:
+        await user.set({User.data: None})
+    else:
+        await user.delete()
+
+    return PlainTextResponse(status_code=204)
 
 
 @app.get("/{uuid}", response_model=UserConfig, responses={204: {}}, summary="Get player data")

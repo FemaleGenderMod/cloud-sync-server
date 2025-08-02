@@ -6,8 +6,8 @@ from datetime import timedelta, datetime
 from typing import Annotated
 
 from beanie import Document, init_beanie, Indexed
-from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, UUID4
+from pymongo import AsyncMongoClient
 
 
 # fastapi docs suck for enums, so just document the ordinals in the doc string here
@@ -80,7 +80,7 @@ class ContributorNametag(BaseModel):
 
 class User(Document):
     uuid: Annotated[UUID4, Indexed()]
-    data: UserConfig
+    data: UserConfig | None
     nametag: ContributorNametag | None = None
 
     @classmethod
@@ -91,5 +91,5 @@ class User(Document):
 
 async def init_db():
     host = os.environ.get("MONGO_HOST", "mongodb://localhost:27017")
-    client = AsyncIOMotorClient(host, serverSelectionTimeoutMS=5_000)
+    client = AsyncMongoClient(host, connectTimeoutMS=5_000)
     await init_beanie(database=client["wfgm-sync"], document_models=[User, UserAuth])
