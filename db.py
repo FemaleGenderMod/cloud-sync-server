@@ -73,9 +73,39 @@ class UserConfig(BaseModel):
         cache_capacity = 2048
 
 
+# TODO these property docstrings are not shown in the generated OpenAPI model docs :(
 class ContributorNametag(BaseModel):
     text: str
+    """Text displayed instead of the normal contributor nametag.
+
+    This value is ignored on versions that support ``roles``, but is still required
+    for backwards compatibility with versions that do not support it."""
+
+    name: str | None = None
+    """Optional; the contributor's display name. This does not have to match the username of the
+    associated Minecraft account.
+
+    This must be set for a contributor to be displayed in the in-game credits screen."""
+
     color: int | None = None
+    """"Optional; packed RGB color used for the nametag above a contributor's head, and in various other UIs.
+
+    This may be null to use the regular contributor color."""
+
+    roles: int | None = None
+    """Bitmask referring to the following possible enum values (in the following order):
+
+    - MOD_CREATOR
+    - FABRIC_MAINTAINER
+    - NEOFORGE_MAINTAINER
+    - DEVELOPER
+    - TRANSLATOR
+    - MASCOT
+    - GENERIC"""
+
+    show_in_credits: bool = True
+    """If this is false, this contributor will not be shown in the credits screen, even if
+    a valid ``name`` is specified."""
 
 
 class User(Document):
