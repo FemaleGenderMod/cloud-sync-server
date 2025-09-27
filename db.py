@@ -85,7 +85,10 @@ class ContributorNametag(BaseModel):
     """Optional; the contributor's display name. This does not have to match the username of the
     associated Minecraft account.
 
-    This must be set for a contributor to be displayed in the in-game credits screen."""
+    This must be set for a contributor to be displayed in the in-game credits screen.
+
+    If this is not set and there exists a contributor with the same UUID in the mod's built-in
+    list of contributors, this contributor entry will be entirely ignored."""
 
     color: int | None = None
     """"Optional; packed RGB color used for the nametag above a contributor's head, and in various other UIs.
@@ -93,7 +96,8 @@ class ContributorNametag(BaseModel):
     This may be null to use the regular contributor color."""
 
     roles: int | None = None
-    """Bitmask referring to the following possible enum values (in the following order):
+    """Bitmask referring to how this user has contributed to the mod, with the following
+    possible enum values (in order of how they're listed):
 
     - MOD_CREATOR
     - FABRIC_MAINTAINER
@@ -101,7 +105,11 @@ class ContributorNametag(BaseModel):
     - DEVELOPER
     - TRANSLATOR
     - MASCOT
-    - GENERIC"""
+    - VOICE_ACTOR_FEMALE
+    - GENERIC
+
+    Note that the mod currently (as of 4.3.5 on 1.21.9) only uses the topmost role defined in the bitmask,
+    and all additional roles defined (if any) are ignored."""
 
     show_in_credits: bool = True
     """If this is false, this contributor will not be shown in the credits screen, even if
