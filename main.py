@@ -24,6 +24,8 @@ from models import (
     StatsResponse,
 )
 
+# this is defined later
+# noinspection PyTypeChecker
 SESSION: aiohttp.ClientSession = ...
 
 
