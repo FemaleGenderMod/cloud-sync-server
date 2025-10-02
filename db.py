@@ -95,7 +95,7 @@ class ContributorNametag(BaseModel):
 
     This may be null to use the regular contributor color."""
 
-    roles: int | None = None
+    roles: int = 0
     """Bitmask referring to how this user has contributed to the mod, with the following
     possible enum values (in order of how they're listed):
 
