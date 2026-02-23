@@ -35,4 +35,8 @@ HTTPS; this issue is automatically worked around if you're in a development envi
 but this otherwise effectively forces an HTTPS requirement for any kind of production deployment (which you should already
 be doing to begin with).
 
+Additionally, if your origin is behind Cloudflare, you **must** ensure that AI Labrynth is **OFF**, otherwise requests for
+individual player data may be sinkholed to the labrynth, due to the fact that they serve these pages at a top-level
+UUID, which interferes with the paths this server expects.
+
 [Female Gender Mod]: https://github.com/WildfireRomeo/WildfireFemaleGenderMod
