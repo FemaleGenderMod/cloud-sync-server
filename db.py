@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import enum
 import os
-from datetime import timedelta, datetime
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, Literal
 
 from beanie import Document, init_beanie, Indexed
 from pydantic import BaseModel, UUID4
 from pymongo import AsyncMongoClient
+
+NamedGender = Literal["male", "female", "other"]
 
 
 # fastapi docs suck for enums, so just document the ordinals in the doc string here
@@ -23,6 +25,31 @@ class Gender(enum.IntEnum):
     MALE = 1
     OTHER = 2
 
+    # TODO is there a better way to do these?
+    @property
+    def named(self) -> NamedGender:
+        if self == Gender.FEMALE:
+            return "female"
+        elif self == Gender.MALE:
+            return "male"
+        elif self == Gender.OTHER:
+            return "other"
+        raise ValueError(f"unknown gender value {self!r}")
+
+    @staticmethod
+    def from_ordinal(ordinal: int) -> Gender:
+        return Gender.FEMALE if ordinal == 0 else Gender.MALE if ordinal == 1 else Gender.OTHER
+
+    @classmethod
+    def from_name(cls, gender: NamedGender) -> Gender:
+        if gender == "male":
+            return Gender.MALE
+        elif gender == "female":
+            return Gender.FEMALE
+        elif gender == "other":
+            return Gender.OTHER
+        raise ValueError(f"unknown gender value {gender!r}")
+
 
 class UserAuth(Document):
     uuid: UUID4
@@ -30,23 +57,9 @@ class UserAuth(Document):
     created_at: Annotated[datetime, Indexed(expireAfterSeconds=60 * 60)]
 
 
+# note: any new fields added here must also be reflected in the relevant api version models as well
+# TODO add a migration to convert this to be similar to the new config file structure
 class UserConfig(BaseModel):
-    """User configuration model storing the same data the mod stores locally
-
-    Any provided key-value pairs not in this model will be ignored by the server when pushing an
-    update to a player's settings. Similarly, any keys not provided will revert to their
-    default values.
-
-    Note that the server does not validate the allowed range for any number values; any clients
-    consuming this data should ensure that they restrict any received values to the relevant
-    allowed ranges.
-    """
-
-    # username is intentionally skipped
-
-    ### NOTE TO CONTRIBUTORS: ##
-    # All fields below MUST have their default value listed, otherwise things WILL break!
-
     gender: Gender = Gender.MALE
 
     bust_size: float = 0.6
@@ -59,18 +72,12 @@ class UserConfig(BaseModel):
     breasts_cleavage: float = 0.0
 
     breast_physics: bool = True
-    # armor_physics_override is intentionally skipped
     show_in_armor: bool = True
     bounce_multiplier: float = 0.333
     floppy_multiplier: float = 0.75
 
     voice_pitch: float = 1.0
     holiday_themes: bool = True
-
-    class Settings:
-        use_cache = True
-        cache_expiration_time = timedelta(minutes=10)
-        cache_capacity = 2048
 
 
 # TODO these property docstrings are not shown in the generated OpenAPI model docs :(
