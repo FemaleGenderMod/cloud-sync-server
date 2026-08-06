@@ -1,4 +1,4 @@
-# wfgm-sync-server
+# Cloud Sync Server
 
 A minimal web server built with FastAPI, providing cloud sync capabilities for the [Female Gender Mod].
 
@@ -14,14 +14,12 @@ A minimal web server built with FastAPI, providing cloud sync capabilities for t
 This server has the following prerequisite requirements to run:
 
 - A MongoDB server with replication support enabled
-  - [MongoDB Atlas](https://www.mongodb.com/atlas) provides free databases with up to 512 MB of storage; I personally don't recommend
-    this for a production deployment due to previous experiences around the stability of it, but this may still be suitable enough for
-    local development, or small-scale deployments for a small group of friends/a private server.
-- Python 3.10 or newer
+  - [MongoDB Atlas](https://www.mongodb.com/atlas) provides free databases with up to 512 MB of storage
+- Python 3.10 through 3.13
 - [Poetry](https://python-poetry.org/)
 
 ```sh
-git clone https://codeberg.org/celestialfault/wfgm-sync-server.git
+git clone https://github.com/FemaleGenderMod/cloud-sync-server.git
 cd wfgm-sync-server
 poetry install --only main
 poetry run fastapi run
@@ -30,13 +28,9 @@ poetry run fastapi run
 Afterward, override the default `cloud_server` in `config/wildfire_gender.json` to point to your server,
 such as `https://wfgm.example.com`.
 
-Note that there is a known issue where the mod will fail to send the player's data to the server if it isn't running over
-HTTPS; this issue is automatically worked around if you're in a development environment (to allow for local development),
-but this otherwise effectively forces an HTTPS requirement for any kind of production deployment (which you should already
-be doing to begin with).
-
-Additionally, if your origin is behind Cloudflare, you **must** ensure that AI Labrynth is **OFF**, otherwise requests for
-individual player data may be sinkholed to the labrynth, due to the fact that they serve these pages at a top-level
-UUID, which interferes with the paths this server expects.
+>[!important]
+> There are known issues with the mod not properly connecting to cloud sync servers not running over HTTPS;
+> this issue is automatically worked around in a development environment where relevant, but production
+> deployments are expected to always be running over HTTPS.
 
 [Female Gender Mod]: https://github.com/WildfireRomeo/WildfireFemaleGenderMod
