@@ -7,7 +7,7 @@ from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
 from core.common_models import AuthenticatedResponse, ErrorResponse, SuccessResponse
-from db import User, UserAuth, ContributorNametag
+from db import User, ContributorNametag
 from .models import AuthenticationBody, UserData, BulkQueryResponse
 
 app = FastAPI(version="2.0.0")
@@ -20,6 +20,9 @@ app = FastAPI(version="2.0.0")
         403: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
     },
+    # technically redundant as fastapi would generate this exact string from the function name anyway,
+    # but we're still going to specify it for completeness.
+    summary="Authenticate",
 )
 async def authenticate(body: AuthenticationBody):
     return await core.auth.handle_auth_request(body.server_id, body.username)
@@ -39,7 +42,9 @@ async def contributors(response: Response):
 @app.post(
     "/players",
     response_model=BulkQueryResponse,
-    responses={400: {"model": ErrorResponse}},
+    responses={
+        400: {"model": ErrorResponse},
+    },
     summary="Get data for multiple players",
 )
 async def get_multiple_players(body: set[UUID4]):
@@ -81,6 +86,7 @@ async def get_multiple_players(body: set[UUID4]):
     responses={
         204: {},
     },
+    summary="Get player data",
 )
 async def get_player(uuid: UUID4, response: Response):
     response.headers["Cache-Control"] = "public,max-age=600"
@@ -96,22 +102,12 @@ async def get_player(uuid: UUID4, response: Response):
         403: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
     },
+    summary="Update player data",
 )
 async def update_player(uuid: UUID4, auth_token: Annotated[str, Header()], body: UserData):
-    auth = await UserAuth.find_one(UserAuth.token == auth_token)
-    if not auth:
-        return JSONResponse(
-            status_code=401,
-            content={"success": False, "error": "Authentication is invalid or has expired"},
-        )
-    if auth.uuid != uuid:
-        return JSONResponse(
-            status_code=403,
-            content={
-                "success": False,
-                "error": "The given authentication is not valid for the current user",
-            },
-        )
+    auth = await core.auth.authenticate(auth_token, uuid)
+    if auth.error:
+        return auth.error
 
     user = await User.find_one_or_create(uuid)
     user.data = body.to_db()
@@ -137,20 +133,9 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()]):
     Note that the provided authentication token remains valid for its normal lifecycle after
     sending a request to this route.
     """
-    auth = await UserAuth.find_one(UserAuth.token == auth_token)
-    if not auth:
-        return JSONResponse(
-            status_code=401,
-            content={"success": False, "error": "Authentication is invalid or has expired"},
-        )
-    if auth.uuid != uuid:
-        return JSONResponse(
-            status_code=403,
-            content={
-                "success": False,
-                "error": "The given authentication is not valid for the current user",
-            },
-        )
+    auth = await core.auth.authenticate(auth_token, uuid)
+    if auth.error:
+        return auth.error
 
     user = await User.find_one({User.uuid: uuid})
     if not user or not user.data:
@@ -165,4 +150,3 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()]):
         await user.delete()
 
     return PlainTextResponse(status_code=204)
-

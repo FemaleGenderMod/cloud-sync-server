@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import secrets
+from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from uuid import UUID
 
@@ -64,3 +67,29 @@ async def handle_auth_request(server_id: str, username: str) -> dict | JSONRespo
         "account": auth.uuid,
         "expires": auth.created_at + timedelta(hours=1),
     }
+
+
+async def authenticate(token: str, uuid: UUID) -> AuthenticatedUser:
+    auth = await UserAuth.find_one(UserAuth.token == token)
+    if not auth:
+        error = JSONResponse(
+            status_code=401,
+            content={"success": False, "error": "Authentication is invalid or has expired"},
+        )
+        return AuthenticatedUser(token=None, error=error)
+    if auth.uuid != uuid:
+        error = JSONResponse(
+            status_code=403,
+            content={
+                "success": False,
+                "error": "The given authentication is not valid for the current user",
+            },
+        )
+        return AuthenticatedUser(token=None, error=error)
+    return AuthenticatedUser(token=auth, error=None)
+
+
+@dataclass(frozen=True)
+class AuthenticatedUser:
+    token: UserAuth | None
+    error: JSONResponse | None

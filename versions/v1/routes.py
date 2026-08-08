@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Annotated
 
 from beanie.odm.operators.find.comparison import In
@@ -7,8 +6,8 @@ from pydantic import UUID4
 from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
-from core.common_models import ErrorResponse, AuthenticatedResponse, StatsResponse, SuccessResponse
-from db import UserConfig, User, ContributorNametag, UserAuth
+from core.common_models import ErrorResponse, AuthenticatedResponse, SuccessResponse
+from db import UserConfig, User, ContributorNametag
 
 __all__ = (
     "app",
@@ -82,7 +81,10 @@ async def contributors(response: Response):
 @app.get(
     "/auth",
     response_model=AuthenticatedResponse,
-    responses={403: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+    responses={
+        403: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
     summary="Get authentication token",
 )
 async def get_auth(
@@ -117,7 +119,7 @@ async def get_auth(
     summary="Update player data",
 )
 async def update_data(
-    uuid: UUID4, auth_token: Annotated[str, Header()], body: UserConfig, response: Response
+    uuid: UUID4, auth_token: Annotated[str, Header()], body: UserData, response: Response
 ):
     """Stores the provided player data for the given authenticated user
 
@@ -125,23 +127,12 @@ async def update_data(
     """
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
 
-    auth = await UserAuth.find_one(UserAuth.token == auth_token)
-    if not auth:
-        return JSONResponse(
-            status_code=401,
-            content={"success": False, "error": "Authentication is invalid or has expired"},
-        )
-    if auth.uuid != uuid:
-        return JSONResponse(
-            status_code=403,
-            content={
-                "success": False,
-                "error": "The given authentication is not valid for the current user",
-            },
-        )
+    auth = await core.auth.authenticate(auth_token, uuid)
+    if auth.error:
+        return auth.error
 
     user = await User.find_one_or_create(uuid)
-    user.data = body
+    user.data = body.to_db()
     await user.save()
     return {"success": True}
 
@@ -167,20 +158,9 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()], respons
     """
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
 
-    auth = await UserAuth.find_one(UserAuth.token == auth_token)
-    if not auth:
-        return JSONResponse(
-            status_code=401,
-            content={"success": False, "error": "Authentication is invalid or has expired"},
-        )
-    if auth.uuid != uuid:
-        return JSONResponse(
-            status_code=403,
-            content={
-                "success": False,
-                "error": "The given authentication is not valid for the current user",
-            },
-        )
+    auth = await core.auth.authenticate(auth_token, uuid)
+    if auth.error:
+        return auth.error
 
     user = await User.find_one({User.uuid: uuid})
     if not user or not user.data:
@@ -201,4 +181,4 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()], respons
 async def get_player(uuid: UUID4, response: Response):
     response.headers["Cache-Control"] = "public,max-age=600"
     user = await User.find_one(User.uuid == uuid)
-    return user and user.data or PlainTextResponse(status_code=204)
+    return user and UserData.from_db(user.data) or PlainTextResponse(status_code=204)

@@ -6,8 +6,8 @@ A minimal web server built with FastAPI, providing cloud sync capabilities for t
 > If you are a user, **you do not need to install this!** The mod already ships with its own default cloud sync server,
 > which does not require any additional configuration to use.
 >
-> This server is provided to allow for other developers to contribute to it, as well as a reference for anyone
-> that may wish to reimplement the APIs it provides for their own purposes.
+> This server is provided to allow for others to contribute to it, as well as a reference for anyone that may wish to
+> reimplement the APIs it provides for their own purposes.
 
 ## Running your own
 
@@ -20,17 +20,18 @@ This server has the following prerequisite requirements to run:
 
 ```sh
 git clone https://github.com/FemaleGenderMod/cloud-sync-server.git
-cd wfgm-sync-server
+cd cloud-sync-server
 poetry install --only main
 poetry run fastapi run
 ```
 
-Afterward, override the default `cloud_server` in `config/wildfire_gender.json` to point to your server,
+Afterward, override the default `cloud_server` in `config/female_gender_mod.json`[^1] to point to your server,
 such as `https://wfgm.example.com`.
 
->[!important]
+>[!note]
 > There are known issues with the mod not properly connecting to cloud sync servers not running over HTTPS;
 > this issue is automatically worked around in a development environment where relevant, but production
 > deployments are expected to always be running over HTTPS.
 
+[^1]: Older versions may use a `wildfire_gender.json` file instead
 [Female Gender Mod]: https://github.com/WildfireRomeo/WildfireFemaleGenderMod

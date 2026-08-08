@@ -41,8 +41,8 @@ app = FastAPI(
     description="""Sync server for the [Female Gender Mod](https://modrinth.com/mod/female-gender)
 
 Available versions:
-- [v1](./v1/docs) (deprecated)
-- [v2](./v2/docs)
+- [v1](/v1/docs) (deprecated)
+- [v2](/v2/docs)
 """,
 )
 app.mount("/v1", v1.app)
