@@ -69,6 +69,7 @@ async def handle_auth_request(server_id: str, username: str) -> dict | JSONRespo
     }
 
 
+# TODO convert this to a middleware
 async def authenticate(token: str, uuid: UUID) -> AuthenticatedUser:
     auth = await UserAuth.find_one(UserAuth.token == token)
     if not auth:

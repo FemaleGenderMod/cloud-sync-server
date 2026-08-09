@@ -35,6 +35,11 @@ async def authenticate(body: AuthenticationBody):
     return await core.auth.handle_auth_request(body.server_id, body.username)
 
 
+# TODO is it worth taking the opportunity with this new api version to remove fields that
+#      arent used by the versions that use this from the response?
+# I don't imagine it is, especially if most requests to this route are returned by Cloudflare's cache
+# but still might be nice to reduce some small amount of bandwidth usage, even if the production
+# server doesn't have a particularly large response to this route anyway
 @app.get(
     "/contributors",
     response_model=dict[UUID4, ContributorNametag],
