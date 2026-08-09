@@ -25,6 +25,13 @@ app = FastAPI(version="2.0.0")
     summary="Authenticate",
 )
 async def authenticate(body: AuthenticationBody):
+    """Retrieve an authentication token used for updating player data
+
+    This route requires [authenticating with Mojang's session servers](https://minecraft.wiki/w/Java_Edition_protocol/Encryption#Authentication).
+
+    The provided authentication token will expire after 1 hour, and will automatically be invalidated if
+    this route is called again before it expires.
+    """
     return await core.auth.handle_auth_request(body.server_id, body.username)
 
 
@@ -89,6 +96,7 @@ async def get_multiple_players(body: set[UUID4]):
     summary="Get player data",
 )
 async def get_player(uuid: UUID4, response: Response):
+    """Returns data for the given player if any data exists"""
     response.headers["Cache-Control"] = "public,max-age=600"
     user = await User.find_one(User.uuid == uuid)
     return user and UserData.from_db(user.data) or PlainTextResponse(status_code=204)
@@ -105,6 +113,10 @@ async def get_player(uuid: UUID4, response: Response):
     summary="Update player data",
 )
 async def update_player(uuid: UUID4, auth_token: Annotated[str, Header()], body: UserData):
+    """Stores the provided player data for the given authenticated user
+
+    This requires an `Auth-Token` header provided from the `/auth` route.
+    """
     auth = await core.auth.authenticate(auth_token, uuid)
     if auth.error:
         return auth.error

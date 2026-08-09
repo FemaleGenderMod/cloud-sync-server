@@ -96,9 +96,8 @@ async def get_auth(
 
     This route requires [authenticating with Mojang's session servers](https://minecraft.wiki/w/Java_Edition_protocol/Encryption#Authentication).
 
-    The provided authentication token will expire after 1 hour.
-
-    Any authentication tokens that haven't yet expired will be invalidated after obtaining a new token.
+    The provided authentication token will expire after 1 hour, and will automatically be invalidated if
+    this route is called again before it expires.
     """
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return await core.auth.handle_auth_request(server_id, username)
@@ -118,15 +117,11 @@ async def get_auth(
     },
     summary="Update player data",
 )
-async def update_data(
-    uuid: UUID4, auth_token: Annotated[str, Header()], body: UserData, response: Response
-):
+async def update_data(uuid: UUID4, auth_token: Annotated[str, Header()], body: UserData):
     """Stores the provided player data for the given authenticated user
 
     This requires an `Auth-Token` header provided from the `/auth` route.
     """
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-
     auth = await core.auth.authenticate(auth_token, uuid)
     if auth.error:
         return auth.error
@@ -148,7 +143,7 @@ async def update_data(
     },
     summary="Delete player data",
 )
-async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()], response: Response):
+async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()]):
     """Deletes the stored player data for the given authenticated user
 
     This requires an `Auth-Token` header provided from the `/auth` route.
@@ -156,8 +151,6 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()], respons
     Note that the provided authentication token remains valid for its normal lifecycle after
     sending a request to this route.
     """
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-
     auth = await core.auth.authenticate(auth_token, uuid)
     if auth.error:
         return auth.error
@@ -179,6 +172,7 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()], respons
 
 @app.get("/{uuid}", response_model=UserConfig, responses={204: {}}, summary="Get player data")
 async def get_player(uuid: UUID4, response: Response):
+    """Returns data for the given player if any data exists"""
     response.headers["Cache-Control"] = "public,max-age=600"
     user = await User.find_one(User.uuid == uuid)
     return user and UserData.from_db(user.data) or PlainTextResponse(status_code=204)

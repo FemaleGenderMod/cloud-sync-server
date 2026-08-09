@@ -33,5 +33,6 @@ such as `https://wfgm.example.com`.
 > this issue is automatically worked around in a development environment where relevant, but production
 > deployments are expected to always be running over HTTPS.
 
-[^1]: Older versions may use a `wildfire_gender.json` file instead
 [Female Gender Mod]: https://github.com/WildfireRomeo/WildfireFemaleGenderMod
+
+[^1]: Older versions may use a `wildfire_gender.json` file instead
