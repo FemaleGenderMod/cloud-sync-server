@@ -3,52 +3,40 @@ from __future__ import annotations
 import enum
 import os
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, ClassVar, cast
 
 from beanie import Document, init_beanie, Indexed
 from pydantic import BaseModel, UUID4
 from pymongo import AsyncMongoClient
 
+from core.util import Lazy
+
 NamedGender = Literal["male", "female", "other"]
 
 
-# fastapi docs suck for enums, so just document the ordinals in the doc string here
 class Gender(enum.IntEnum):
-    """Integer value referencing the ordinal value of the Gender enum in the mod
-
-    - `FEMALE`: 0
-    - `MALE`: 1
-    - `OTHER`: 2
-    """
+    FROM_NAME: ClassVar[dict[NamedGender, Gender]] = Lazy(lambda: {"male": Gender.MALE, "female": Gender.FEMALE, "other": Gender.OTHER})
+    TO_NAME: ClassVar[dict[Gender, NamedGender]] = Lazy(lambda: {v: k for k, v in Gender.FROM_NAME.items()})
+    FROM_ID: ClassVar[dict[Gender, NamedGender]] = Lazy(lambda: {i: Gender(i) for i in range(len(Gender))})
 
     FEMALE = 0
     MALE = 1
     OTHER = 2
 
-    # TODO is there a better way to do these?
     @property
     def named(self) -> NamedGender:
-        if self == Gender.FEMALE:
-            return "female"
-        elif self == Gender.MALE:
-            return "male"
-        elif self == Gender.OTHER:
-            return "other"
-        raise ValueError(f"unknown gender value {self!r}")
+        return cast(NamedGender, Gender.TO_NAME[self])
 
     @staticmethod
     def from_ordinal(ordinal: int) -> Gender:
-        return Gender.FEMALE if ordinal == 0 else Gender.MALE if ordinal == 1 else Gender.OTHER
+        return Gender.FROM_ID[ordinal % len(Gender)]
 
     @classmethod
     def from_name(cls, gender: NamedGender) -> Gender:
-        if gender == "male":
-            return Gender.MALE
-        elif gender == "female":
-            return Gender.FEMALE
-        elif gender == "other":
-            return Gender.OTHER
-        raise ValueError(f"unknown gender value {gender!r}")
+        value = Gender.FROM_NAME[gender]
+        if value is None:
+            raise ValueError(f"unknown gender value {gender!r}")
+        return value
 
 
 class UserAuth(Document):

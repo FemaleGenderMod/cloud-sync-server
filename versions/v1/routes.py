@@ -7,7 +7,7 @@ from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
 from core.common_models import ErrorResponse, AuthenticatedResponse, SuccessResponse
-from db import UserConfig, User, ContributorNametag
+from core.db import UserConfig, User, ContributorNametag
 
 __all__ = (
     "app",

@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, UUID4
 
-from db import UserConfig, Gender
+from core.db import UserConfig, Gender
 
 
 class BulkQueryResponse(BaseModel):
@@ -21,7 +21,6 @@ class UserData(BaseModel):
     gender: Literal["male", "female", "other"] = "male"
     breasts: BreastsData = Field(default_factory=lambda: BreastsData())
     sound: SoundData = Field(default_factory=lambda: SoundData())
-    holiday_themes: bool = True
     show_in_armor: bool = True
 
     @classmethod
@@ -46,7 +45,6 @@ class UserData(BaseModel):
                 override_hurt=user.hurt_sounds,
                 voice_pitch=user.voice_pitch,
             ),
-            holiday_themes=user.holiday_themes,
             show_in_armor=user.show_in_armor,
         )
 
@@ -65,7 +63,6 @@ class UserData(BaseModel):
             bounce_multiplier=self.breasts.physics.bounce_multiplier,
             floppy_multiplier=self.breasts.physics.floppiness,
             voice_pitch=self.sound.voice_pitch,
-            holiday_themes=self.holiday_themes,
         )
 
 

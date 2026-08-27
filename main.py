@@ -13,7 +13,7 @@ from starlette.responses import JSONResponse, PlainTextResponse, RedirectRespons
 
 from core import util
 from core.common_models import SuccessResponse, ErrorResponse, StatsResponse
-from db import init_db, UserConfig, User, ContributorNametag
+from core.db import init_db, UserConfig, User, ContributorNametag
 from versions import v1, v2
 
 # this is defined later

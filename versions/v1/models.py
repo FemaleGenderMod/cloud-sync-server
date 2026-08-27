@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, UUID4
 
-from db import UserConfig, Gender
+from core.db import UserConfig, Gender
 
 
 class BulkQueryResponse(BaseModel):

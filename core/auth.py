@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import UUID4
 from starlette.responses import JSONResponse
 
-from db import UserAuth
+from core.db import UserAuth
 from . import util
 
 

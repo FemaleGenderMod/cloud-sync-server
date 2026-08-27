@@ -7,7 +7,7 @@ from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
 from core.common_models import AuthenticatedResponse, ErrorResponse, SuccessResponse
-from db import User, ContributorNametag
+from core.db import User, ContributorNametag
 from .models import AuthenticationBody, UserData, BulkQueryResponse
 
 app = FastAPI(version="2.0.0")
