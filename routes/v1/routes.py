@@ -22,7 +22,7 @@ __all__ = (
 from .models import BulkQueryResponse, UserData
 
 app = FastAPI(
-    description="**This API version is deprecated; please use [v2](/v2/docs) instead if possible.**",
+    description="These API routes are deprecated; please use the new [v2](/v2/docs) API routes in new applications.",
     version="1.0.0",
 )
 
