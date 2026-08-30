@@ -2,26 +2,41 @@ from __future__ import annotations
 
 import enum
 import os
-from datetime import timedelta, datetime
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, Literal, ClassVar, cast
 
 from beanie import Document, init_beanie, Indexed
 from pydantic import BaseModel, UUID4
 from pymongo import AsyncMongoClient
 
+from core.util import Lazy
 
-# fastapi docs suck for enums, so just document the ordinals in the doc string here
+NamedGender = Literal["male", "female", "other"]
+
+
 class Gender(enum.IntEnum):
-    """Integer value referencing the ordinal value of the Gender enum in the mod
-
-    - `FEMALE`: 0
-    - `MALE`: 1
-    - `OTHER`: 2
-    """
+    FROM_NAME: ClassVar[dict[NamedGender, Gender]] = Lazy(lambda: {"male": Gender.MALE, "female": Gender.FEMALE, "other": Gender.OTHER})
+    TO_NAME: ClassVar[dict[Gender, NamedGender]] = Lazy(lambda: {v: k for k, v in Gender.FROM_NAME.items()})
+    FROM_ID: ClassVar[dict[Gender, NamedGender]] = Lazy(lambda: {i: Gender(i) for i in range(len(Gender))})
 
     FEMALE = 0
     MALE = 1
     OTHER = 2
+
+    @property
+    def named(self) -> NamedGender:
+        return cast(NamedGender, Gender.TO_NAME[self])
+
+    @staticmethod
+    def from_ordinal(ordinal: int) -> Gender:
+        return Gender.FROM_ID[ordinal % len(Gender)]
+
+    @classmethod
+    def from_name(cls, gender: NamedGender) -> Gender:
+        value = Gender.FROM_NAME[gender]
+        if value is None:
+            raise ValueError(f"unknown gender value {gender!r}")
+        return value
 
 
 class UserAuth(Document):
@@ -30,23 +45,9 @@ class UserAuth(Document):
     created_at: Annotated[datetime, Indexed(expireAfterSeconds=60 * 60)]
 
 
+# note: any new fields added here must also be reflected in the relevant api version models as well
+# TODO add a migration to convert this to be similar to the new config file structure
 class UserConfig(BaseModel):
-    """User configuration model storing the same data the mod stores locally
-
-    Any provided key-value pairs not in this model will be ignored by the server when pushing an
-    update to a player's settings. Similarly, any keys not provided will revert to their
-    default values.
-
-    Note that the server does not validate the allowed range for any number values; any clients
-    consuming this data should ensure that they restrict any received values to the relevant
-    allowed ranges.
-    """
-
-    # username is intentionally skipped
-
-    ### NOTE TO CONTRIBUTORS: ##
-    # All fields below MUST have their default value listed, otherwise things WILL break!
-
     gender: Gender = Gender.MALE
 
     bust_size: float = 0.6
@@ -59,18 +60,12 @@ class UserConfig(BaseModel):
     breasts_cleavage: float = 0.0
 
     breast_physics: bool = True
-    # armor_physics_override is intentionally skipped
     show_in_armor: bool = True
     bounce_multiplier: float = 0.333
     floppy_multiplier: float = 0.75
 
     voice_pitch: float = 1.0
     holiday_themes: bool = True
-
-    class Settings:
-        use_cache = True
-        cache_expiration_time = timedelta(minutes=10)
-        cache_capacity = 2048
 
 
 # TODO these property docstrings are not shown in the generated OpenAPI model docs :(
