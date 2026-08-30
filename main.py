@@ -13,10 +13,6 @@ from core.common_models import StatsResponse
 from core.db import init_db, User
 from routes import v1, v2, admin
 
-# this is defined later
-# noinspection PyTypeChecker
-SESSION: aiohttp.ClientSession = ...
-
 
 @asynccontextmanager
 async def lifecycle(_):
