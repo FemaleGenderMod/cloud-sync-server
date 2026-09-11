@@ -3,16 +3,20 @@ from typing import Annotated
 from beanie.odm.operators.find.comparison import In
 from fastapi import FastAPI, Header
 from pydantic import UUID4
+from starlette.requests import Request
 from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
 from core.common_models import AuthenticatedResponse, ErrorResponse, SuccessResponse
 from core.db import User, ContributorNametag
+from core.util import limiter
 from .models import AuthenticationBody, UserData, BulkQueryResponse
 
 app = FastAPI(version="2.0.0")
 
 
+# request is required for @limiter.limit
+# noinspection PyUnusedLocal
 @app.post(
     "/auth",
     response_model=AuthenticatedResponse,
@@ -24,7 +28,8 @@ app = FastAPI(version="2.0.0")
     # but we're still going to specify it for completeness.
     summary="Authenticate",
 )
-async def authenticate(body: AuthenticationBody):
+@limiter.limit("2/minute")
+async def authenticate(body: AuthenticationBody, request: Request):
     """Retrieve an authentication token used for updating player data
 
     This route requires [authenticating with Mojang's session servers](https://minecraft.wiki/w/Java_Edition_protocol/Encryption#Authentication).

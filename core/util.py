@@ -4,11 +4,15 @@ from typing import Callable, TypeVar, Generic
 
 import aiohttp
 
-__all__ = ("session", "Lazy")
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+__all__ = ("session", "Lazy", "limiter")
 
 # noinspection PyTypeChecker
 session: aiohttp.ClientSession = ...
 T = TypeVar("T")
+limiter = Limiter(key_func=get_remote_address)
 
 
 class Lazy(Generic[T]):

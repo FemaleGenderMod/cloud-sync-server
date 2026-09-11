@@ -3,6 +3,7 @@ from typing import Annotated
 from beanie.odm.operators.find.comparison import In
 from fastapi import FastAPI, Query, Header
 from pydantic import UUID4
+from starlette.requests import Request
 from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
@@ -18,6 +19,8 @@ __all__ = (
     "delete_data",
     "update_data",
 )
+
+from core.util import limiter
 
 from .models import BulkQueryResponse, UserData
 
@@ -78,6 +81,8 @@ async def contributors(response: Response):
     return {x.uuid: x.nametag async for x in User.find(User.nametag != None)}
 
 
+# request is required for @limiter.limit
+# noinspection PyUnusedLocal
 @app.get(
     "/auth",
     response_model=AuthenticatedResponse,
@@ -87,9 +92,11 @@ async def contributors(response: Response):
     },
     summary="Get authentication token",
 )
+@limiter.limit("2/minute")
 async def get_auth(
     server_id: Annotated[str, Query(alias="serverId")],
     username: Annotated[str, Query()],
+    request: Request,
     response: Response,
 ):
     """Retrieve an authentication token used for updating player data
