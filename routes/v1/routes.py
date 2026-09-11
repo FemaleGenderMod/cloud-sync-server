@@ -9,6 +9,8 @@ from starlette.responses import Response, PlainTextResponse, JSONResponse
 import core.auth
 from core.common_models import ErrorResponse, AuthenticatedResponse, SuccessResponse
 from core.db import UserConfig, User, ContributorNametag
+from core.util import limiter
+from .models import BulkQueryResponse, UserData
 
 __all__ = (
     "app",
@@ -19,10 +21,6 @@ __all__ = (
     "delete_data",
     "update_data",
 )
-
-from core.util import limiter
-
-from .models import BulkQueryResponse, UserData
 
 app = FastAPI(
     description="These API routes are deprecated; please use the new [v2](/v2/docs) API routes in new applications.",
@@ -92,7 +90,8 @@ async def contributors(response: Response):
     },
     summary="Get authentication token",
 )
-@limiter.limit("2/minute")
+# relatively strict rate limit as you ideally shouldn't be authenticating this often to begin with
+@limiter.limit("10/hour")
 async def get_auth(
     server_id: Annotated[str, Query(alias="serverId")],
     username: Annotated[str, Query()],

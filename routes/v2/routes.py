@@ -28,7 +28,8 @@ app = FastAPI(version="2.0.0")
     # but we're still going to specify it for completeness.
     summary="Authenticate",
 )
-@limiter.limit("2/minute")
+# relatively strict rate limit as you ideally shouldn't be authenticating this often to begin with
+@limiter.limit("10/hour")
 async def authenticate(body: AuthenticationBody, request: Request):
     """Retrieve an authentication token used for updating player data
 
