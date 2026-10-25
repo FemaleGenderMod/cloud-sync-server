@@ -19,9 +19,7 @@ class Gender(enum.IntEnum):
     FROM_NAME: ClassVar[dict[NamedGender, Gender]] = Lazy(
         lambda: {"male": Gender.MALE, "female": Gender.FEMALE, "other": Gender.OTHER}
     )
-    TO_NAME: ClassVar[dict[Gender, NamedGender]] = Lazy(
-        lambda: {v: k for k, v in Gender.FROM_NAME.items()}
-    )
+    TO_NAME: ClassVar[dict[Gender, NamedGender]] = Lazy(lambda: {v: k for k, v in Gender.FROM_NAME.items()})
     FROM_ID: ClassVar[dict[int, Gender]] = Lazy(lambda: {x.value: x for x in Gender})
 
     FEMALE = 0

@@ -22,7 +22,7 @@ app = FastAPI(version="2.0.0")
     response_model=AuthenticatedResponse,
     responses={
         403: {"model": ErrorResponse},
-        500: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
     },
     summary="Authenticate with Mojang",
 )
@@ -87,11 +87,7 @@ async def get_multiple_players(body: set[UUID4]):
 
     return {
         "success": True,
-        "users": {
-            x.uuid: UserData.from_db(x.data)
-            async for x in User.find_many(In(User.uuid, body))
-            if x.data
-        },
+        "users": {x.uuid: UserData.from_db(x.data) async for x in User.find_many(In(User.uuid, body)) if x.data},
     }
 
 

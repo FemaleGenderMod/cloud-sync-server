@@ -7,7 +7,7 @@ import aiohttp
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-__all__ = ("session", "Lazy", "limiter")
+__all__ = ("session", "Lazy", "limiter", "expect_value")
 
 # noinspection PyTypeChecker
 session: aiohttp.ClientSession = ...
@@ -24,3 +24,8 @@ class Lazy(Generic[T]):
         if self.__value is ...:
             self.__value = self.__constructor()
         return self.__value
+
+
+def expect_value(condition: bool, message: Callable[[], str]):
+    if not condition:
+        raise ValueError(message())

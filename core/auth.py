@@ -32,9 +32,7 @@ async def validate_session_server(server_id: str, username: str) -> UUID4:
     params = {"username": username, "serverId": server_id}
     async with util.session.get(url, params=params) as response:
         if response.status >= 400:
-            raise AuthServerError(
-                f"Session servers returned an unexpected response status {response.status}"
-            )
+            raise AuthServerError(f"Session servers returned an unexpected response status {response.status}")
         json = await response.json()
         if not json or "id" not in json:
             raise InvalidAuthenticationError("Couldn't authenticate with Mojang")
@@ -45,7 +43,7 @@ async def handle_auth_request(server_id: str, username: str) -> dict | JSONRespo
     try:
         uuid = await validate_session_server(server_id, username)
     except AuthServerError as e:
-        return JSONResponse(status_code=500, content={"success": False, "error": e.message})
+        return JSONResponse(status_code=503, content={"success": False, "error": e.message})
     except InvalidAuthenticationError as e:
         return JSONResponse(status_code=403, content={"success": False, "error": e.message})
     except asyncio.TimeoutError:
@@ -55,9 +53,7 @@ async def handle_auth_request(server_id: str, username: str) -> dict | JSONRespo
         )
 
     await UserAuth.find_many(UserAuth.uuid == uuid).delete_many()
-    auth = UserAuth(
-        uuid=uuid, token=secrets.token_urlsafe(32), created_at=datetime.now(timezone.utc)
-    )
+    auth = UserAuth(uuid=uuid, token=secrets.token_urlsafe(32), created_at=datetime.now(timezone.utc))
     # noinspection PyArgumentList
     await auth.insert()
 
