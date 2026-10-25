@@ -11,7 +11,7 @@ from starlette.responses import PlainTextResponse, RedirectResponse, Response
 from core import util
 from core.common_models import StatsResponse
 from core.db import init_db, User
-from routes import v1, v2, admin
+from routes import v1, v2
 
 
 @asynccontextmanager
@@ -41,7 +41,6 @@ Available versions:
 )
 app.mount("/v1", v1.app)
 app.mount("/v2", v2.app)
-app.mount("/admin", admin.app)
 
 
 @app.get("/", include_in_schema=False)

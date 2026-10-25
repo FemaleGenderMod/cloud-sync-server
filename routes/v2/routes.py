@@ -8,7 +8,7 @@ from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
 from core.common_models import AuthenticatedResponse, ErrorResponse, SuccessResponse
-from core.db import User, ContributorNametag
+from core.db import User
 from core.util import limiter
 from .models import AuthenticationBody, UserData, BulkQueryResponse
 
@@ -24,9 +24,7 @@ app = FastAPI(version="2.0.0")
         403: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
     },
-    # technically redundant as fastapi would generate this exact string from the function name anyway,
-    # but we're still going to specify it for completeness.
-    summary="Authenticate",
+    summary="Authenticate with Mojang",
 )
 # relatively strict rate limit as you ideally shouldn't be authenticating this often to begin with
 @limiter.limit("10/hour")
@@ -41,22 +39,21 @@ async def authenticate(body: AuthenticationBody, request: Request):
     return await core.auth.handle_auth_request(body.server_id, body.username)
 
 
-# TODO is it worth taking the opportunity with this new api version to remove fields that
-#      arent used by the versions that use this from the response?
-# I don't imagine it is, especially if most requests to this route are returned by Cloudflare's cache
-# but still might be nice to reduce some small amount of bandwidth usage, even if the production
-# server doesn't have a particularly large response to this route anyway
 @app.get(
     "/contributors",
-    response_model=dict[UUID4, ContributorNametag],
+    response_model=dict,
     summary="Get contributor nametags",
+    deprecated=True,
 )
 async def contributors(response: Response):
-    response.headers["Cache-Control"] = "public, max-age=3600"
-    # noinspection PyComparisonWithNone
-    return {x.uuid: x.nametag async for x in User.find(User.nametag != None)}
+    """
+    Deprecated; the relevant mod feature that used this has been removed, and as such this route no longer returns any data.
+    """
+    response.headers["Cache-Control"] = "public, max-age=21600"
+    return {}
 
 
+# would still love to be able to use QUERY :(
 @app.post(
     "/players",
     response_model=BulkQueryResponse,
@@ -167,9 +164,5 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()]):
             content={"success": False, "error": "No data is stored for the given player"},
         )
 
-    if user.nametag:
-        await user.set({User.data: None})
-    else:
-        await user.delete()
-
+    await user.delete()
     return PlainTextResponse(status_code=204)

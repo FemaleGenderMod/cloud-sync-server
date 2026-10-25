@@ -8,7 +8,7 @@ from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
 from core.common_models import ErrorResponse, AuthenticatedResponse, SuccessResponse
-from core.db import UserConfig, User, ContributorNametag
+from core.db import UserConfig, User
 from core.util import limiter
 from .models import BulkQueryResponse, UserData
 
@@ -70,13 +70,16 @@ async def get_multiple_players(body: set[UUID4]):
 
 @app.get(
     "/contributors",
-    response_model=dict[UUID4, ContributorNametag],
+    response_model=dict,
     summary="Get contributor nametags",
+    deprecated=True,
 )
 async def contributors(response: Response):
-    response.headers["Cache-Control"] = "public, max-age=3600"
-    # noinspection PyComparisonWithNone
-    return {x.uuid: x.nametag async for x in User.find(User.nametag != None)}
+    """
+    Deprecated; the relevant mod feature that used this has been removed, and as such this route no longer returns any data.
+    """
+    response.headers["Cache-Control"] = "public, max-age=21600"
+    return {}
 
 
 # request is required for @limiter.limit
@@ -88,7 +91,7 @@ async def contributors(response: Response):
         403: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
     },
-    summary="Get authentication token",
+    summary="Authenticate with Mojang",
 )
 # relatively strict rate limit as you ideally shouldn't be authenticating this often to begin with
 @limiter.limit("10/hour")
@@ -168,11 +171,7 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()]):
             content={"success": False, "error": "No data is stored for the given player"},
         )
 
-    if user.nametag:
-        await user.set({User.data: None})
-    else:
-        await user.delete()
-
+    await user.delete()
     return PlainTextResponse(status_code=204)
 
 
