@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Annotated, Literal, ClassVar, cast
 
 from beanie import Document, init_beanie, Indexed
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, Field
 from pymongo import AsyncMongoClient
 
 from core.util import Lazy
@@ -22,9 +22,7 @@ class Gender(enum.IntEnum):
     TO_NAME: ClassVar[dict[Gender, NamedGender]] = Lazy(
         lambda: {v: k for k, v in Gender.FROM_NAME.items()}
     )
-    FROM_ID: ClassVar[dict[Gender, NamedGender]] = Lazy(
-        lambda: {i: Gender(i) for i in range(len(Gender))}
-    )
+    FROM_ID: ClassVar[dict[int, Gender]] = Lazy(lambda: {x.value: x for x in Gender})
 
     FEMALE = 0
     MALE = 1
@@ -73,7 +71,7 @@ class UserConfig(BaseModel):
 
     voice_pitch: float = 1.0
     holiday_themes: bool = True
-    uvs: BreastUVs | None = None
+    uvs: BreastUVs = Field(default_factory=lambda: BreastUVs())
 
 
 class User(Document):

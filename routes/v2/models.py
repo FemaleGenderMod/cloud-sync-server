@@ -48,7 +48,7 @@ class UserData(BaseModel):
                 voice_pitch=user.voice_pitch,
             ),
             show_in_armor=user.show_in_armor,
-            uvs=user.uvs or BreastUVs(),
+            uvs=user.uvs,
         )
 
     def to_db(self) -> UserConfig:

@@ -54,12 +54,16 @@ class LayerUVs(BaseModel):
     @field_validator("left", "right")
     @classmethod
     def validate_quad(cls, value: dict[UVSide, list[int]]) -> dict[UVSide, list[int]]:
-        for (side, quad) in value.items():
+        for side, quad in value.items():
             # should be caught by min_length and max_length, but still double check just to be safe while we're here
             if len(quad) != 4:
-                raise ValueError(f"Invalid side {side.value}: expected exactly 4 coordinate positions")
+                raise ValueError(
+                    f"Invalid side {side.value}: expected exactly 4 coordinate positions"
+                )
             elif not all(0 <= x <= 64 for x in quad):
-                raise ValueError(f"Invalid side {side.value}: contained UV coordinates must be within 0..64")
+                raise ValueError(
+                    f"Invalid side {side.value}: contained UV coordinates must be within 0..64"
+                )
         return value
 
 
