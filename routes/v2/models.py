@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, UUID4
 
 from core.db import UserConfig, Gender
+from core.uvs import BreastUVs
 
 
 class BulkQueryResponse(BaseModel):
@@ -22,6 +23,7 @@ class UserData(BaseModel):
     breasts: BreastsData = Field(default_factory=lambda: BreastsData())
     sound: SoundData = Field(default_factory=lambda: SoundData())
     show_in_armor: bool = True
+    uvs: BreastUVs = Field(default_factory=lambda: BreastUVs())
 
     @classmethod
     def from_db(cls, user: UserConfig | None) -> UserData | None:
@@ -46,6 +48,7 @@ class UserData(BaseModel):
                 voice_pitch=user.voice_pitch,
             ),
             show_in_armor=user.show_in_armor,
+            uvs=user.uvs or BreastUVs(),
         )
 
     def to_db(self) -> UserConfig:
@@ -63,6 +66,7 @@ class UserData(BaseModel):
             bounce_multiplier=self.breasts.physics.bounce_multiplier,
             floppy_multiplier=self.breasts.physics.floppiness,
             voice_pitch=self.sound.voice_pitch,
+            uvs=self.uvs,
         )
 
 

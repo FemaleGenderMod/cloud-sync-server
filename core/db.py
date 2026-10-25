@@ -10,14 +10,21 @@ from pydantic import BaseModel, UUID4
 from pymongo import AsyncMongoClient
 
 from core.util import Lazy
+from core.uvs import BreastUVs
 
 NamedGender = Literal["male", "female", "other"]
 
 
 class Gender(enum.IntEnum):
-    FROM_NAME: ClassVar[dict[NamedGender, Gender]] = Lazy(lambda: {"male": Gender.MALE, "female": Gender.FEMALE, "other": Gender.OTHER})
-    TO_NAME: ClassVar[dict[Gender, NamedGender]] = Lazy(lambda: {v: k for k, v in Gender.FROM_NAME.items()})
-    FROM_ID: ClassVar[dict[Gender, NamedGender]] = Lazy(lambda: {i: Gender(i) for i in range(len(Gender))})
+    FROM_NAME: ClassVar[dict[NamedGender, Gender]] = Lazy(
+        lambda: {"male": Gender.MALE, "female": Gender.FEMALE, "other": Gender.OTHER}
+    )
+    TO_NAME: ClassVar[dict[Gender, NamedGender]] = Lazy(
+        lambda: {v: k for k, v in Gender.FROM_NAME.items()}
+    )
+    FROM_ID: ClassVar[dict[Gender, NamedGender]] = Lazy(
+        lambda: {i: Gender(i) for i in range(len(Gender))}
+    )
 
     FEMALE = 0
     MALE = 1
@@ -66,7 +73,7 @@ class UserConfig(BaseModel):
 
     voice_pitch: float = 1.0
     holiday_themes: bool = True
-
+    uvs: BreastUVs | None = None
 
 
 class User(Document):

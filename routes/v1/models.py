@@ -29,6 +29,7 @@ class UserData(BaseModel):
 
     voice_pitch: float = 1.0
     holiday_themes: bool = True
+    # v1 intentionally lacks support for UVs
 
     @classmethod
     def from_db(cls, user: UserConfig | None) -> UserData | None:
