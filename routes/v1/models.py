@@ -31,10 +31,18 @@ class UserData(BaseModel):
     voice_pitch: float = 1.0
     holiday_themes: bool = True
 
-    # leftBreastUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_skin().left)
-    # rightBreastUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_skin().right)
-    # leftBreastOverlayUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_overlay().left)
-    # rightBreastOverlayUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_overlay().right)
+    leftBreastUVLayout: OldUVMapping = Field(
+        default_factory=lambda: OldUVMapping.from_modern(LayerUVs.default_skin().left)
+    )
+    rightBreastUVLayout: OldUVMapping = Field(
+        default_factory=lambda: OldUVMapping.from_modern(LayerUVs.default_skin().right)
+    )
+    leftBreastOverlayUVLayout: OldUVMapping = Field(
+        default_factory=lambda: OldUVMapping.from_modern(LayerUVs.default_overlay().left)
+    )
+    rightBreastOverlayUVLayout: OldUVMapping = Field(
+        default_factory=lambda: OldUVMapping.from_modern(LayerUVs.default_overlay().right)
+    )
 
     @classmethod
     def from_db(cls, user: UserConfig | None) -> UserData | None:
@@ -56,10 +64,10 @@ class UserData(BaseModel):
             floppy_multiplier=user.floppy_multiplier,
             voice_pitch=user.voice_pitch,
             holiday_themes=user.holiday_themes,
-            # leftBreastUVLayout=user.uvs.skin.left,
-            # rightBreastUVLayout=user.uvs.skin.right,
-            # leftBreastOverlayUVLayout=user.uvs.overlay.left,
-            # rightBreastOverlayUVLayout=user.uvs.overlay.right,
+            leftBreastUVLayout=OldUVMapping.from_modern(user.uvs.skin.left),
+            rightBreastUVLayout=OldUVMapping.from_modern(user.uvs.skin.right),
+            leftBreastOverlayUVLayout=OldUVMapping.from_modern(user.uvs.overlay.left),
+            rightBreastOverlayUVLayout=OldUVMapping.from_modern(user.uvs.overlay.right),
         )
 
     def to_db(self) -> UserConfig:
@@ -78,14 +86,99 @@ class UserData(BaseModel):
             floppy_multiplier=self.floppy_multiplier,
             voice_pitch=self.voice_pitch,
             holiday_themes=self.holiday_themes,
-            # uvs=BreastUVs(
-            #     skin=LayerUVs(
-            #         left=self.leftBreastUVLayout,
-            #         right=self.rightBreastUVLayout,
-            #     ),
-            #     overlay=LayerUVs(
-            #         left=self.leftBreastOverlayUVLayout,
-            #         right=self.rightBreastOverlayUVLayout,
-            #     ),
-            # ),
+            uvs=BreastUVs(
+                skin=LayerUVs(
+                    left=self.leftBreastUVLayout.to_modern(),
+                    right=self.rightBreastUVLayout.to_modern(),
+                ),
+                overlay=LayerUVs(
+                    left=self.leftBreastOverlayUVLayout.to_modern(),
+                    right=self.rightBreastOverlayUVLayout.to_modern(),
+                ),
+            ),
         )
+
+
+# I do not like having to support these older versions
+class OldUVMapping(BaseModel):
+    down: OldUVMappingEntry
+    up: OldUVMappingEntry
+    east: OldUVMappingEntry
+    west: OldUVMappingEntry
+    north: OldUVMappingEntry
+
+    @classmethod
+    def from_modern(cls, mapping: UVMapping) -> OldUVMapping:
+        return OldUVMapping(
+            down=OldUVMappingEntry(
+                x1=mapping.down[0],
+                y1=mapping.down[1],
+                x2=mapping.down[2],
+                y2=mapping.down[3],
+            ),
+            up=OldUVMappingEntry(
+                x1=mapping.up[0],
+                y1=mapping.up[1],
+                x2=mapping.up[2],
+                y2=mapping.up[3],
+            ),
+            east=OldUVMappingEntry(
+                x1=mapping.east[0],
+                y1=mapping.east[1],
+                x2=mapping.east[2],
+                y2=mapping.east[3],
+            ),
+            west=OldUVMappingEntry(
+                x1=mapping.west[0],
+                y1=mapping.west[1],
+                x2=mapping.west[2],
+                y2=mapping.west[3],
+            ),
+            north=OldUVMappingEntry(
+                x1=mapping.north[0],
+                y1=mapping.north[1],
+                x2=mapping.north[2],
+                y2=mapping.north[3],
+            ),
+        )
+
+    def to_modern(self) -> UVMapping:
+        return UVMapping(
+            down=[
+                self.down.x1,
+                self.down.y1,
+                self.down.x2,
+                self.down.y2,
+            ],
+            up=[
+                self.up.x1,
+                self.up.y1,
+                self.up.x2,
+                self.up.y2,
+            ],
+            east=[
+                self.east.x1,
+                self.east.y1,
+                self.east.x2,
+                self.east.y2,
+            ],
+            west=[
+                self.west.x1,
+                self.west.y1,
+                self.west.x2,
+                self.west.y2,
+            ],
+            north=[
+                self.north.x1,
+                self.north.y1,
+                self.north.x2,
+                self.north.y2,
+            ],
+        )
+
+
+class OldUVMappingEntry(BaseModel):
+    x1: int = Field(ge=0, le=64, examples=[0])
+    y1: int = Field(ge=0, le=64, examples=[0])
+    x2: int = Field(ge=0, le=64, examples=[0])
+    y2: int = Field(ge=0, le=64, examples=[0])
