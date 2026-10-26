@@ -8,7 +8,7 @@ from starlette.responses import Response, PlainTextResponse, JSONResponse
 
 import core.auth
 from core.common_models import ErrorResponse, AuthenticatedResponse, SuccessResponse
-from core.db import UserConfig, User
+from core.db import User
 from core.util import limiter
 from .models import BulkQueryResponse, UserData
 
@@ -171,7 +171,7 @@ async def delete_data(uuid: UUID4, auth_token: Annotated[str, Header()]):
     return PlainTextResponse(status_code=204)
 
 
-@app.get("/{uuid}", response_model=UserConfig, responses={204: {}}, summary="Get player data")
+@app.get("/{uuid}", response_model=UserData, responses={204: {}}, summary="Get player data")
 async def get_player(uuid: UUID4, response: Response):
     """Returns data for the given player if any data exists"""
     response.headers["Cache-Control"] = "public,max-age=600"
