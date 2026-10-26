@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, UUID4
 
-from core.db import UserConfig, Gender
+from core.db import UserConfig, Gender, NamedGender
 from core.uvs import BreastUVs
 
 
@@ -19,7 +19,7 @@ class AuthenticationBody(BaseModel):
 
 
 class UserData(BaseModel):
-    gender: Literal["male", "female", "other"] = "male"
+    gender: NamedGender = "male"
     breasts: BreastsData = Field(default_factory=lambda: BreastsData())
     sound: SoundData = Field(default_factory=lambda: SoundData())
     show_in_armor: bool = True

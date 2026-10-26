@@ -31,10 +31,10 @@ class UserData(BaseModel):
     voice_pitch: float = 1.0
     holiday_themes: bool = True
 
-    leftBreastUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_skin().left)
-    rightBreastUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_skin().right)
-    leftBreastOverlayUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_overlay().left)
-    rightBreastOverlayUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_overlay().right)
+    # leftBreastUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_skin().left)
+    # rightBreastUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_skin().right)
+    # leftBreastOverlayUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_overlay().left)
+    # rightBreastOverlayUVLayout: UVMapping = Field(default_factory=lambda: LayerUVs.default_overlay().right)
 
     @classmethod
     def from_db(cls, user: UserConfig | None) -> UserData | None:
@@ -56,10 +56,10 @@ class UserData(BaseModel):
             floppy_multiplier=user.floppy_multiplier,
             voice_pitch=user.voice_pitch,
             holiday_themes=user.holiday_themes,
-            leftBreastUVLayout=user.uvs.skin.left,
-            rightBreastUVLayout=user.uvs.skin.right,
-            leftBreastOverlayUVLayout=user.uvs.overlay.left,
-            rightBreastOverlayUVLayout=user.uvs.overlay.right,
+            # leftBreastUVLayout=user.uvs.skin.left,
+            # rightBreastUVLayout=user.uvs.skin.right,
+            # leftBreastOverlayUVLayout=user.uvs.overlay.left,
+            # rightBreastOverlayUVLayout=user.uvs.overlay.right,
         )
 
     def to_db(self) -> UserConfig:
@@ -78,14 +78,14 @@ class UserData(BaseModel):
             floppy_multiplier=self.floppy_multiplier,
             voice_pitch=self.voice_pitch,
             holiday_themes=self.holiday_themes,
-            uvs=BreastUVs(
-                skin=LayerUVs(
-                    left=self.leftBreastUVLayout,
-                    right=self.rightBreastUVLayout,
-                ),
-                overlay=LayerUVs(
-                    left=self.leftBreastOverlayUVLayout,
-                    right=self.rightBreastOverlayUVLayout,
-                ),
-            ),
+            # uvs=BreastUVs(
+            #     skin=LayerUVs(
+            #         left=self.leftBreastUVLayout,
+            #         right=self.rightBreastUVLayout,
+            #     ),
+            #     overlay=LayerUVs(
+            #         left=self.leftBreastOverlayUVLayout,
+            #         right=self.rightBreastOverlayUVLayout,
+            #     ),
+            # ),
         )

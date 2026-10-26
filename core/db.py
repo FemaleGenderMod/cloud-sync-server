@@ -12,6 +12,7 @@ from pymongo import AsyncMongoClient
 from core.util import Lazy
 from core.uvs import BreastUVs
 
+__all__ = ("NamedGender", "Gender", "UserAuth", "UserConfig", "User", "init_db")
 NamedGender = Literal["male", "female", "other"]
 
 
