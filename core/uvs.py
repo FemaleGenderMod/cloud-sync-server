@@ -40,7 +40,7 @@ class LayerUVs(BaseModel):
                 east=UVMapping.unused(),
                 west=[17, 37, 20, 42],
                 down=[20, 34, 24, 37],
-                up=[20, 34, 24, 37],
+                up=[20, 41, 24, 44],
                 north=[20, 37, 24, 42],
             ),
             right=UVMapping(
